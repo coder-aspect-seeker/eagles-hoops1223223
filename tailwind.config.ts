@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -89,6 +90,13 @@ export default {
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out'
+			},
+			scale: {
+				'98': '0.98'
+			},
+			spacing: {
+				'safe-area-inset-top': 'env(safe-area-inset-top)',
+				'safe-area-inset-bottom': 'env(safe-area-inset-bottom)'
 			}
 		}
 	},
