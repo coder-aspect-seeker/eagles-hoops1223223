@@ -49,7 +49,6 @@ const PlayersView = ({ onAddPlayer }: PlayersViewProps) => {
             key={player.id}
             player={player}
             showAttendance={false}
-            showDelete={true}
           />
         ))}
       </div>
