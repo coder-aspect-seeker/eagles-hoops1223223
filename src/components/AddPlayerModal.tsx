@@ -24,10 +24,41 @@ const AddPlayerModal = ({ isOpen, onClose }: AddPlayerModalProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.number || !formData.position) {
+    
+    // Validate required fields
+    if (!formData.name.trim()) {
       toast({
         title: "Missing Information",
-        description: "Please fill in all required fields.",
+        description: "Player name is required.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formData.number.trim()) {
+      toast({
+        title: "Missing Information",
+        description: "Jersey number is required.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formData.position) {
+      toast({
+        title: "Missing Information",
+        description: "Position is required.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate number
+    const jerseyNumber = parseInt(formData.number);
+    if (isNaN(jerseyNumber) || jerseyNumber < 0 || jerseyNumber > 99) {
+      toast({
+        title: "Invalid Number",
+        description: "Jersey number must be between 0 and 99.",
         variant: "destructive",
       });
       return;
@@ -36,21 +67,25 @@ const AddPlayerModal = ({ isOpen, onClose }: AddPlayerModalProps) => {
     setLoading(true);
     try {
       await addPlayer({
-        name: formData.name,
-        number: parseInt(formData.number),
+        name: formData.name.trim(),
+        number: jerseyNumber,
         position: formData.position,
-        photoURL: formData.photoURL || undefined
+        photoURL: formData.photoURL.trim() || undefined
       });
+      
       toast({
         title: "Player Added",
         description: `${formData.name} has been added to the team.`,
       });
+      
+      // Reset form and close modal
       setFormData({ name: '', number: '', position: '', photoURL: '' });
       onClose();
     } catch (error) {
+      console.error('Add player error:', error);
       toast({
         title: "Error",
-        description: "Failed to add player. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to add player. Please try again.",
         variant: "destructive",
       });
     } finally {

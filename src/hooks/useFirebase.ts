@@ -28,24 +28,56 @@ export const useFirebase = () => {
   }, []);
 
   const addPlayer = async (player: Omit<Player, 'id'>) => {
-    const playersRef = ref(database, 'players');
-    const newPlayerRef = push(playersRef);
-    await set(newPlayerRef, player);
+    try {
+      console.log('Adding player:', player);
+      const playersRef = ref(database, 'players');
+      const newPlayerRef = push(playersRef);
+      
+      // Ensure all required fields are present and clean
+      const playerData = {
+        name: player.name.trim(),
+        number: Number(player.number),
+        position: player.position.trim(),
+        ...(player.photoURL && { photoURL: player.photoURL.trim() })
+      };
+      
+      console.log('Player data to save:', playerData);
+      await set(newPlayerRef, playerData);
+      console.log('Player added successfully');
+    } catch (error) {
+      console.error('Error adding player:', error);
+      throw new Error(`Failed to add player: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   };
 
   const updatePlayer = async (playerId: string, updates: Partial<Player>) => {
-    const playerRef = ref(database, `players/${playerId}`);
-    await set(playerRef, updates);
+    try {
+      const playerRef = ref(database, `players/${playerId}`);
+      await set(playerRef, updates);
+    } catch (error) {
+      console.error('Error updating player:', error);
+      throw new Error(`Failed to update player: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   };
 
   const deletePlayer = async (playerId: string) => {
-    const playerRef = ref(database, `players/${playerId}`);
-    await remove(playerRef);
+    try {
+      const playerRef = ref(database, `players/${playerId}`);
+      await remove(playerRef);
+    } catch (error) {
+      console.error('Error deleting player:', error);
+      throw new Error(`Failed to delete player: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   };
 
   const saveAttendance = async (date: string, attendance: DayAttendance) => {
-    const attendanceRef = ref(database, `attendance/${date}`);
-    await set(attendanceRef, attendance);
+    try {
+      const attendanceRef = ref(database, `attendance/${date}`);
+      await set(attendanceRef, attendance);
+    } catch (error) {
+      console.error('Error saving attendance:', error);
+      throw new Error(`Failed to save attendance: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   };
 
   return {
