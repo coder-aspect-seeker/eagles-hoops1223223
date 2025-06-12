@@ -4,14 +4,13 @@ import { getAuth } from 'firebase/auth';
 import { getDatabase } from 'firebase/database';
 
 const firebaseConfig = {
-  // Users will need to add their Firebase config here
-  apiKey: "your-api-key",
-  authDomain: "your-project.firebaseapp.com",
-  databaseURL: "your-database-url",
-  projectId: "your-project-id",
-  storageBucket: "your-project.appspot.com",
-  messagingSenderId: "your-sender-id",
-  appId: "your-app-id"
+  apiKey: "AIzaSyC5cXDo0XmFAPrpG9memJclIitdpoSSclE",
+  authDomain: "thehoopslab.firebaseapp.com",
+  databaseURL: "https://thehoopslab-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "thehoopslab",
+  storageBucket: "thehoopslab.firebasestorage.app",
+  messagingSenderId: "190081337670",
+  appId: "1:190081337670:web:c5c490c57c769c5d11fd47"
 };
 
 const app = initializeApp(firebaseConfig);
