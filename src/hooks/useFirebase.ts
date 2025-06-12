@@ -1,14 +1,39 @@
 
 import { useState, useEffect } from 'react';
-import { ref, onValue, push, set, remove } from 'firebase/database';
+import { ref, onValue, push, set, remove, get } from 'firebase/database';
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { database } from '@/lib/firebase';
 import { Player, DayAttendance } from '@/types';
 
 export const useFirebase = () => {
   const [players, setPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(true);
+  const storage = getStorage();
 
   useEffect(() => {
+    const initializeDatabase = async () => {
+      try {
+        const playersRef = ref(database, 'players');
+        const attendanceRef = ref(database, 'attendance');
+        
+        // Check if players folder exists, if not create it
+        const playersSnapshot = await get(playersRef);
+        if (!playersSnapshot.exists()) {
+          await set(playersRef, {});
+        }
+        
+        // Check if attendance folder exists, if not create it
+        const attendanceSnapshot = await get(attendanceRef);
+        if (!attendanceSnapshot.exists()) {
+          await set(attendanceRef, {});
+        }
+      } catch (error) {
+        console.error('Error initializing database:', error);
+      }
+    };
+
+    initializeDatabase();
+
     const playersRef = ref(database, 'players');
     const unsubscribe = onValue(playersRef, (snapshot) => {
       const data = snapshot.val();
@@ -26,6 +51,18 @@ export const useFirebase = () => {
 
     return () => unsubscribe();
   }, []);
+
+  const uploadImage = async (file: File): Promise<string> => {
+    try {
+      const imageRef = storageRef(storage, `players/${Date.now()}_${file.name}`);
+      const snapshot = await uploadBytes(imageRef, file);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+      return downloadURL;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      throw new Error(`Failed to upload image: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  };
 
   const addPlayer = async (player: Omit<Player, 'id'>) => {
     try {
@@ -80,12 +117,25 @@ export const useFirebase = () => {
     }
   };
 
+  const getAttendanceHistory = async () => {
+    try {
+      const attendanceRef = ref(database, 'attendance');
+      const snapshot = await get(attendanceRef);
+      return snapshot.val() || {};
+    } catch (error) {
+      console.error('Error getting attendance history:', error);
+      throw new Error(`Failed to get attendance history: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  };
+
   return {
     players,
     loading,
     addPlayer,
     updatePlayer,
     deletePlayer,
-    saveAttendance
+    saveAttendance,
+    getAttendanceHistory,
+    uploadImage
   };
 };

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import BottomNavigation from '@/components/BottomNavigation';
 import AttendanceView from '@/components/AttendanceView';
 import PlayersView from '@/components/PlayersView';
+import HistoryView from '@/components/HistoryView';
 import AddPlayerModal from '@/components/AddPlayerModal';
 import { Toaster } from '@/components/ui/toaster';
 
@@ -25,12 +26,7 @@ const Index = () => {
       case 'players':
         return <PlayersView onAddPlayer={() => setShowAddModal(true)} />;
       case 'history':
-        return (
-          <div className="p-4 pb-24 text-center py-12">
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">Attendance History</h1>
-            <p className="text-gray-500">Coming soon...</p>
-          </div>
-        );
+        return <HistoryView />;
       default:
         return <AttendanceView />;
     }

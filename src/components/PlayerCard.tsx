@@ -1,15 +1,27 @@
 
 import { Player, AttendanceStatus } from '@/types';
-import { User } from 'lucide-react';
+import { User, Trash2, CheckCircle, Clock, XCircle } from 'lucide-react';
+import { useFirebase } from '@/hooks/useFirebase';
+import { useToast } from '@/hooks/use-toast';
 
 interface PlayerCardProps {
   player: Player;
   attendanceStatus?: AttendanceStatus;
   onStatusChange?: (status: AttendanceStatus) => void;
   showAttendance?: boolean;
+  showDelete?: boolean;
 }
 
-const PlayerCard = ({ player, attendanceStatus, onStatusChange, showAttendance = true }: PlayerCardProps) => {
+const PlayerCard = ({ 
+  player, 
+  attendanceStatus, 
+  onStatusChange, 
+  showAttendance = true, 
+  showDelete = false 
+}: PlayerCardProps) => {
+  const { deletePlayer } = useFirebase();
+  const { toast } = useToast();
+
   const getStatusColor = (status?: AttendanceStatus) => {
     switch (status) {
       case 'present': return 'bg-green-500';
@@ -25,6 +37,35 @@ const PlayerCard = ({ player, attendanceStatus, onStatusChange, showAttendance =
       case 'late': return 'Late';
       case 'absent': return 'Absent';
       default: return 'Not marked';
+    }
+  };
+
+  const getStatusIcon = (status: AttendanceStatus) => {
+    switch (status) {
+      case 'present':
+        return <CheckCircle className="w-5 h-5 text-white" />;
+      case 'late':
+        return <Clock className="w-5 h-5 text-white" />;
+      case 'absent':
+        return <XCircle className="w-5 h-5 text-white" />;
+    }
+  };
+
+  const handleDelete = async () => {
+    if (window.confirm(`Are you sure you want to remove ${player.name} from the team?`)) {
+      try {
+        await deletePlayer(player.id);
+        toast({
+          title: "Player Removed",
+          description: `${player.name} has been removed from the team.`,
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to remove player. Please try again.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -45,35 +86,45 @@ const PlayerCard = ({ player, attendanceStatus, onStatusChange, showAttendance =
           </div>
         </div>
         
-        {showAttendance && onStatusChange && (
-          <div className="flex space-x-2">
-            {(['present', 'late', 'absent'] as AttendanceStatus[]).map((status) => (
-              <button
-                key={status}
-                onClick={() => onStatusChange(status)}
-                className={`w-10 h-10 rounded-full border-2 transition-all duration-200 ${
-                  attendanceStatus === status
-                    ? `${getStatusColor(status)} border-transparent`
-                    : 'border-gray-200 bg-white hover:border-gray-300'
-                }`}
-              >
-                <span className="sr-only">{getStatusText(status)}</span>
-                {attendanceStatus === status && (
-                  <div className="w-full h-full rounded-full bg-white bg-opacity-30 flex items-center justify-center">
-                    <div className="w-3 h-3 bg-white rounded-full"></div>
-                  </div>
-                )}
-              </button>
-            ))}
-          </div>
-        )}
-        
-        {showAttendance && !onStatusChange && (
-          <div className="flex items-center space-x-2">
-            <div className={`w-3 h-3 rounded-full ${getStatusColor(attendanceStatus)}`}></div>
-            <span className="text-sm font-medium text-gray-600">{getStatusText(attendanceStatus)}</span>
-          </div>
-        )}
+        <div className="flex items-center space-x-2">
+          {showAttendance && onStatusChange && (
+            <div className="flex space-x-2">
+              {(['present', 'late', 'absent'] as AttendanceStatus[]).map((status) => (
+                <button
+                  key={status}
+                  onClick={() => onStatusChange(status)}
+                  className={`w-10 h-10 rounded-full border-2 transition-all duration-200 flex items-center justify-center ${
+                    attendanceStatus === status
+                      ? `${getStatusColor(status)} border-transparent text-white`
+                      : 'border-gray-200 bg-white hover:border-gray-300'
+                  }`}
+                >
+                  {attendanceStatus === status ? (
+                    getStatusIcon(status)
+                  ) : (
+                    <div className={`w-4 h-4 rounded-full ${getStatusColor(status)}`}></div>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+          
+          {showAttendance && !onStatusChange && (
+            <div className="flex items-center space-x-2">
+              <div className={`w-3 h-3 rounded-full ${getStatusColor(attendanceStatus)}`}></div>
+              <span className="text-sm font-medium text-gray-600">{getStatusText(attendanceStatus)}</span>
+            </div>
+          )}
+
+          {showDelete && (
+            <button
+              onClick={handleDelete}
+              className="p-2 rounded-full bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

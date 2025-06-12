@@ -1,8 +1,8 @@
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useFirebase } from '@/hooks/useFirebase';
 import { useToast } from '@/hooks/use-toast';
-import { X, User } from 'lucide-react';
+import { X, User, Upload } from 'lucide-react';
 
 interface AddPlayerModalProps {
   isOpen: boolean;
@@ -10,7 +10,7 @@ interface AddPlayerModalProps {
 }
 
 const AddPlayerModal = ({ isOpen, onClose }: AddPlayerModalProps) => {
-  const { addPlayer } = useFirebase();
+  const { addPlayer, uploadImage } = useFirebase();
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     name: '',
@@ -19,8 +19,23 @@ const AddPlayerModal = ({ isOpen, onClose }: AddPlayerModalProps) => {
     photoURL: ''
   });
   const [loading, setLoading] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const positions = ['Point Guard', 'Shooting Guard', 'Small Forward', 'Power Forward', 'Center'];
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,11 +81,18 @@ const AddPlayerModal = ({ isOpen, onClose }: AddPlayerModalProps) => {
 
     setLoading(true);
     try {
+      let photoURL = formData.photoURL.trim();
+      
+      // Upload image if file is selected
+      if (imageFile) {
+        photoURL = await uploadImage(imageFile);
+      }
+
       await addPlayer({
         name: formData.name.trim(),
         number: jerseyNumber,
         position: formData.position,
-        photoURL: formData.photoURL.trim() || undefined
+        photoURL: photoURL || undefined
       });
       
       toast({
@@ -80,6 +102,8 @@ const AddPlayerModal = ({ isOpen, onClose }: AddPlayerModalProps) => {
       
       // Reset form and close modal
       setFormData({ name: '', number: '', position: '', photoURL: '' });
+      setImageFile(null);
+      setImagePreview('');
       onClose();
     } catch (error) {
       console.error('Add player error:', error);
@@ -93,10 +117,19 @@ const AddPlayerModal = ({ isOpen, onClose }: AddPlayerModalProps) => {
     }
   };
 
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end justify-center z-50">
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-end justify-center z-50"
+      onClick={handleBackdropClick}
+    >
       <div className="bg-white w-full max-w-md rounded-t-3xl p-6 transform transition-all duration-300 ease-out">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-gray-900">Add New Player</h2>
@@ -112,22 +145,40 @@ const AddPlayerModal = ({ isOpen, onClose }: AddPlayerModalProps) => {
           {/* Photo Preview */}
           <div className="flex justify-center mb-4">
             <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden">
-              {formData.photoURL ? (
-                <img src={formData.photoURL} alt="Preview" className="w-full h-full object-cover" />
+              {imagePreview || formData.photoURL ? (
+                <img src={imagePreview || formData.photoURL} alt="Preview" className="w-full h-full object-cover" />
               ) : (
                 <User className="w-8 h-8 text-gray-400" />
               )}
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Photo URL (Optional)</label>
+          {/* Image Upload Options */}
+          <div className="space-y-2">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full p-3 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300 hover:border-blue-500 transition-colors flex items-center justify-center space-x-2"
+            >
+              <Upload className="w-5 h-5 text-gray-500" />
+              <span className="text-gray-500">Upload Photo</span>
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageSelect}
+              className="hidden"
+            />
+            
+            <div className="text-center text-gray-400 text-sm">or</div>
+            
             <input
               type="url"
               value={formData.photoURL}
               onChange={(e) => setFormData({ ...formData, photoURL: e.target.value })}
               className="w-full p-3 bg-gray-50 rounded-xl border-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="https://example.com/photo.jpg"
+              placeholder="Enter photo URL"
             />
           </div>
 
